@@ -18,18 +18,17 @@ class BasicModule(torch.nn.Module):
         """
         self.load_state_dict(torch.load(path))
 
-    def save(self, name=None):
+    def save(self, epoch, prefix):
         """
         保存模型，默认使用“模型名字+时间”作为文件名
         """
-        
-        prefix = 'check_points/' + self.model_name +name+ '/'
-        if not os.path.isdir(prefix):
-            os.mkdir(prefix)
-        name = time.strftime(prefix + '%m%d_%H:%M:%S.pth')
-        print('model name', name.split('/')[-1] )
+        save_folder = prefix + '/'+self.sub_folder
+        if not os.path.isdir(save_folder):
+            os.mkdir(save_folder)
+        name = save_folder + '/' + str(epoch) + '.pth'
+        print('Save model to', name)
         torch.save(self.state_dict(), name)
-        torch.save(self.state_dict(), prefix+'latest.pth')
+        # torch.save(self.state_dict(), prefix+'/latest.pth')
         return name
     
     def get_optimizer(self, lr, weight_decay):
