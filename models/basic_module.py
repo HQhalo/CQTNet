@@ -11,6 +11,7 @@ class BasicModule(torch.nn.Module):
     def __init__(self):
         super(BasicModule, self).__init__()
         self.model_name = str(type(self))
+        self.sub_folder = time.strftime('%m%d_%H:%M:%S')
 
     def load(self, path):
         """
