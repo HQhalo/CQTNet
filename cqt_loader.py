@@ -2,11 +2,8 @@ import os,sys
 from torchvision import transforms
 import torch, torch.utils
 import numpy as np
-from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-import random
-import bisect
-import torchvision
+
 import PIL
 
 def cut_data(data, out_length):
@@ -43,59 +40,55 @@ def shorter(feature, mean_size=2):
     return new_f
 
 class CQT(Dataset):
-    def __init__(self, mode='train', out_length=None):
-        self.indir = 'data/youtube_cqt_npy/'
-        self.mode=mode
-        if mode == 'train': 
-            filepath='data/SHS100K-TRAIN_6'
-        elif mode == 'val':
-            filepath='data/SHS100K-VAL'
-        elif mode == 'songs350': 
-            self.indir = 'data/you350_cqt_npy/'
-            filepath='data/you350_list.txt'
-        elif mode == 'test': 
-            filepath='data/SHS100K-TEST'
-        elif mode == 'songs80': 
-            self.indir = 'data/covers80_cqt_npy/'
-            filepath = 'data/songs80_list.txt'
-        elif mode == 'Mazurkas':
-            self.indir = 'data/Mazurkas_cqt_npy/'
-            filepath = 'data/Mazurkas_list.txt'
-        with open(filepath, 'r') as fp:
-            self.file_list = [line.rstrip() for line in fp]
+    def __init__(self, filepath , out_length=None):
+        self.indir = filepath
+        self.file_list = list(os.listdir(filepath))
         self.out_length = out_length
     def __getitem__(self, index):
         transform_train = transforms.Compose([
             lambda x : x.T,
-            #lambda x : change_speed(x, 0.7, 1.3),
-            #lambda x : x-np.mean(x),
+            # lambda x : change_speed(x, 0.7, 1.3),
+            # lambda x : x-np.mean(x),
             lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
             lambda x : cut_data(x, self.out_length),
             lambda x : torch.Tensor(x),
             lambda x : x.permute(1,0).unsqueeze(0),
         ])
+        
+        filename = self.file_list[index].strip()
+        set_id, version_id = filename.split('.')[0].split('_')
+        in_path = os.path.join(self.indir, filename)
+        data = np.load(in_path) # from 12xN to Nx12
+
+        data = transform_train(data)
+        return data, int(set_id)
+    def __len__(self):
+        return len(self.file_list)
+
+class CQTVal(Dataset):
+    def __init__(self, filepath , out_length=None):
+        self.indir = filepath
+        self.file_list = list(os.listdir(filepath))
+        self.out_length = out_length
+    def __getitem__(self, index):
         transform_test = transforms.Compose([
             lambda x : x.T,
-            #lambda x : x-np.mean(x),
+            # lambda x : x-np.mean(x),
             lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
             lambda x : cut_data_front(x, self.out_length),
             lambda x : torch.Tensor(x),
             lambda x : x.permute(1,0).unsqueeze(0),
         ])
+        
         filename = self.file_list[index].strip()
         set_id, version_id = filename.split('.')[0].split('_')
-        set_id, version_id = int(set_id), int(version_id)
-        in_path = self.indir+filename+'.npy'
+        in_path = os.path.join(self.indir, filename)
         data = np.load(in_path) # from 12xN to Nx12
 
-        if self.mode is 'train':
-            data = transform_train(data)
-        else:
-            data = transform_test(data)
-        return data, int(set_id)
+        data = transform_test(data)
+        return data, [set_id, version_id]
     def __len__(self):
         return len(self.file_list)
-
     
 def change_speed(data, l=0.7, r=1.5): # change data.shape[0]
     new_len = int(data.shape[0]*np.random.uniform(l,r))
