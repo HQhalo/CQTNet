@@ -11,6 +11,9 @@ from utility import *
 from numpy import dot
 from numpy.linalg import norm
 
+
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
 # multi_size train
 def multi_train(**kwargs):
     parallel = True 

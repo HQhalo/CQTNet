@@ -3,7 +3,7 @@ from torchvision import transforms
 import torch, torch.utils
 import numpy as np
 from torch.utils.data import Dataset
-
+import random
 import PIL
 
 def cut_data(data, out_length):
@@ -64,6 +64,80 @@ class CQT(Dataset):
         return data, int(set_id)
     def __len__(self):
         return len(self.file_list)
+
+
+class CQTSiamese(Dataset):
+    def __init__(self, filepath , out_length=None, song_factor=2):
+        self.transform = transforms.Compose([
+            lambda x : x.T,
+            # lambda x : change_speed(x, 0.7, 1.3),
+            # lambda x : x-np.mean(x),
+            lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
+            lambda x : cut_data(x, self.out_length),
+            lambda x : torch.Tensor(x),
+            lambda x : x.permute(1,0).unsqueeze(0),
+        ])
+        self.indir = filepath
+        self.file_list = list(os.listdir(filepath))
+        self.out_length = out_length
+        self.hums = []
+        self.songs = {}
+        self.labels = []
+
+        for i in range(len(self.file_list)):
+            fileName = self.file_list[i]
+            id, t = fileName.split('-')[0].split('_')
+            self.labels.append(id)
+            if t == 'hum':
+              self.hums.append([id, i, fileName])
+            elif t == 'song':
+              if id not in self.songs:
+                self.songs[id] = []
+              self.songs[id].append([i, fileName])
+
+        self.labels_set = set(self.labels)
+
+        self.cqtFeature = []
+        
+        for i in range(len(self.file_list)):
+            in_path = os.path.join(self.indir, self.file_list[i])
+            data = np.load(in_path)
+            data = self.transform(data)
+            self.cqtFeature.append(data)
+
+        self.posPair = []
+        self.negPair = []
+        for hum in self.hums:
+            id, humIdx, _ = hum
+            for song in self.songs[id]:
+                self.posPair.append([humIdx, song[0]])
+
+            negSongId =  np.random.choice(list(self.labels_set - set([id])))
+            for song in self.songs[negSongId]:
+                self.negPair.append([humIdx, song[0]])
+        
+        self.pairData = []
+        for p in self.posPair:
+            self.pairData.append([p, 1])
+        for p in self.negPair:
+            self.pairData.append([p, 0])
+
+        random.seed(42)
+        random.shuffle(self.pairData)
+
+        
+    def __getitem__(self, index):
+        pair, target = self.pairData[index]
+        humIdx, songIdx = pair
+        data1 = self.cqtFeature[humIdx]
+        data2 = self.cqtFeature[songIdx]
+        
+
+        return (data1, data2), target
+
+    def __len__(self):
+        return len(self.pairData)
+
 
 class CQTVal(Dataset):
     def __init__(self, filepath , out_length=None):
