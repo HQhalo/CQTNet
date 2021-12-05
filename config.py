@@ -11,7 +11,7 @@ class DefaultConfig(object):
     batch_size = 128  # batch size
     use_gpu = True  # user GPU or not
     num_workers = 4  # how many workers for loading data
-
+    dir_save = '/content/CQTNet/check_points'
 
     max_epoch = 100
     lr = 0.001  # initial learning rate
