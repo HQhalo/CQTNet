@@ -26,7 +26,7 @@ class BasicModule(torch.nn.Module):
         save_folder = prefix + '/'+self.sub_folder
         if not os.path.isdir(save_folder):
             os.mkdir(save_folder)
-        name = save_folder + '/' + str(epoch) + '_' + str(songMrr) + '.pth'
+        name = save_folder + '/' + str(epoch) + '_' + str(round(songMrr, 3)) + '.pth'
         print('Save model to', name)
         torch.save(self.state_dict(), name)
         # torch.save(self.state_dict(), prefix+'/latest.pth')
