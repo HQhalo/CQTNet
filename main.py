@@ -17,8 +17,8 @@ torch.cuda.manual_seed(42)
 # multi_size train
 def multi_train(**kwargs):
     parallel = True 
-    opt.model = 'CQTNet'
-    opt.notes='CQTNet'
+    opt.model = 'CQTNetAngular'
+    opt.notes='CQTNetAngular'
     # opt.batch_size=32
     #opt.load_latest=True
     #opt.load_model_path = ''
@@ -79,15 +79,16 @@ def multi_train(**kwargs):
             running_loss += loss.item()
             num += target.shape[0]
         running_loss /= num 
-        if parallel is True:
-            model.module.save(epoch, opt.dir_save)
-        else:
-            model.save(epoch, opt.dir_save)
+        
         # update learning rate
         scheduler.step(running_loss) 
         songMrr = val_MRR(model, val_dataloader, epoch)
         print(f"Epoch {epoch}, running loss: {running_loss}, val MRR: {songMrr}")
 
+        if parallel is True:
+            model.module.save(epoch, songMrr, opt.dir_save)
+        else:
+            model.save(epoch, songMrr, opt.dir_save)
         model.train()
 
    

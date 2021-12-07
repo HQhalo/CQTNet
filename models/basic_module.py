@@ -19,14 +19,14 @@ class BasicModule(torch.nn.Module):
         """
         self.load_state_dict(torch.load(path))
 
-    def save(self, epoch, prefix):
+    def save(self, epoch, songMrr, prefix):
         """
         保存模型，默认使用“模型名字+时间”作为文件名
         """
         save_folder = prefix + '/'+self.sub_folder
         if not os.path.isdir(save_folder):
             os.mkdir(save_folder)
-        name = save_folder + '/' + str(epoch) + '.pth'
+        name = save_folder + '/' + str(epoch) + '_' + str(songMrr) + '.pth'
         print('Save model to', name)
         torch.save(self.state_dict(), name)
         # torch.save(self.state_dict(), prefix+'/latest.pth')

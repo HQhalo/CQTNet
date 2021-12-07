@@ -70,7 +70,7 @@ class CQTSiamese(Dataset):
     def __init__(self, filepath , out_length=None, song_factor=2):
         self.transform = transforms.Compose([
             lambda x : x.T,
-            # lambda x : change_speed(x, 0.7, 1.3),
+            lambda x : change_speed(x, 0.9, 1.1),
             # lambda x : x-np.mean(x),
             lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
             lambda x : cut_data(x, self.out_length),
