@@ -71,8 +71,8 @@ def multi_train(**kwargs):
             target = label.to(opt.device)
 
             optimizer.zero_grad()
-            score, _ = model(input)
-            loss = criterion(score, target)
+            loss = model(input, target, embed=False)
+            # loss = criterion(score, target)
             loss.backward()
             optimizer.step()
 
