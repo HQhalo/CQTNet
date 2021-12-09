@@ -5,7 +5,7 @@ import numpy as np
 from torch.utils.data import Dataset
 import random
 import PIL
-
+np.random.seed(42)
 def cut_data(data, out_length):
     if out_length is not None:
         if data.shape[0] > out_length:
@@ -47,7 +47,7 @@ class CQT(Dataset):
     def __getitem__(self, index):
         transform_train = transforms.Compose([
             lambda x : x.T,
-            lambda x : change_speed(x, 0.9, 1.1),
+            lambda x : change_speed(x, 0.7, 1.3),
             # lambda x : x-np.mean(x),
             lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
             lambda x : cut_data(x, self.out_length),
@@ -56,7 +56,7 @@ class CQT(Dataset):
         ])
         
         filename = self.file_list[index].strip()
-        set_id, version_id = filename.split('.')[0].split('_')
+        set_id, version_id = filename.split('.')[0].split('-')
         in_path = os.path.join(self.indir, filename)
         data = np.load(in_path) # from 12xN to Nx12
 
@@ -155,7 +155,7 @@ class CQTVal(Dataset):
         ])
         
         filename = self.file_list[index].strip()
-        set_id, version_id = filename.split('.')[0].split('_')
+        set_id, version_id = filename.split('.')[0].split('-')
         in_path = os.path.join(self.indir, filename)
         data = np.load(in_path) # from 12xN to Nx12
 
