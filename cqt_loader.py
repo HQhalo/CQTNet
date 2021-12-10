@@ -202,7 +202,7 @@ class CQTVocal(Dataset):
             lambda x : x.T,
             # lambda x : x-np.mean(x),
             lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
-            lambda x : cut_data_front(x, self.out_length),
+            lambda x : cut_data_front(x, None),
             lambda x : torch.Tensor(x),
             lambda x : x.permute(1,0).unsqueeze(0),
         ])
@@ -217,7 +217,7 @@ class CQTVocal(Dataset):
         return data, [set_id, 0]
     def __len__(self):
         return len(self.dataset) 
-                
+
 class CQTHum(Dataset):
     def __init__(self, filepath , out_length=None):
         self.indir = filepath

@@ -33,39 +33,39 @@ def main():
   if args.parallel is True:
     model.module.load(args.load_model_path)
 
-  vocals_data = CQTVocal(args.vocal_path, out_length=None)
+  
   hum_data = CQTHum(args.hum_path, out_length=None)
-
-  vocal_dataloader = DataLoader(vocals_data, 1, shuffle=False,num_workers=1)
   hum_dataloader = DataLoader(hum_data, 1, shuffle=False,num_workers=1)
-
 
   model.eval()
 
-  vocals_features = {}
-  
-  for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
-    input = data.to(DEVICE)
-    score, feature = model(input)
-    feature = feature.data.cpu().numpy().reshape(-1)
-    song_id = label[0][0]
-    if song_id not in vocals_features:
-      vocals_features[song_id] = []    
-    vocals_features[song_id].append(feature)
-
-  hum_features = {}
-  
+  hum_features = {}  
   for ii, (data, label) in tqdm(enumerate(hum_dataloader)):
     input = data.to(DEVICE)
     score, feature = model(input)
     feature = feature.data.cpu().numpy().reshape(-1)
-    hum_features[label[0]] = feature
+    hum_features[label[0]] = [ data.shape[3] ,feature]
 
   result = []
   hum_ids = list(hum_features.keys())
   hum_ids.sort()
   for hum_id in hum_ids:
-    topVocal = topTen(hum_features[hum_id], vocals_features)
+    hum_len, hum_feat = hum_features[hum_id]
+    vocals_data = CQTVocal(args.vocal_path, hum_len)
+    vocal_dataloader = DataLoader(vocals_data, 1, shuffle=False,num_workers=1)
+
+    vocals_features = {}
+    for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
+      input = data.to(DEVICE)
+      score, feature = model(input)
+      feature = feature.data.cpu().numpy().reshape(-1)
+      song_id = label[0][0]
+      if song_id not in vocals_features:
+        vocals_features[song_id] = []    
+      vocals_features[song_id].append(feature)
+      
+
+    topVocal = topTen(hum_feat, vocals_features)
     
     result.append([f"{hum_id}.mp3"] + list(map(lambda x: x[0] , topVocal)))
   with open(args.result_filename, 'w') as f: 
@@ -75,9 +75,13 @@ def main():
 def topTen(hum_feat, vocals_features):
     scores = []
     for track_id in vocals_features.keys():
-        vocal_feat = vocals_features[track_id][0]
-        score = dot(hum_feat, vocal_feat)/(norm(hum_feat)*norm(vocal_feat))
-        scores.append([track_id, score])
+        vocal_feats = vocals_features[track_id]
+        maxScore = -1
+        for vocal_feat in vocal_feats:
+          score = dot(hum_feat, vocal_feat)/(norm(hum_feat)*norm(vocal_feat))
+          if score > maxScore:
+            maxScore = score
+        scores.append([track_id, maxScore])
     scores.sort(reverse=True, key = lambda x: x[1])
     return scores[:10]
 
