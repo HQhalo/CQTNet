@@ -2,32 +2,34 @@ import os
 import argparse
 from cqt_loader import *
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
 import models
-from config import opt
 from tqdm import tqdm
 import numpy as np
 import torch
 from utility import *
 from numpy import dot
 from numpy.linalg import norm
+import csv 
 
+DEVICE= "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser(description = "infer");
 
 parser.add_argument('--model',         type=str,   default='CQTNetAngular',   help='Demucs model');
 
-## Data loader
 parser.add_argument('--load_model_path',     type=str,   default='/content/saved_models/last.pth',    help='model path');
 parser.add_argument('--parallel',     type=bool,   default=True,    help='gpu');
+
 parser.add_argument('--vocal_path',     type=str,   default='/content/database/vocals_npy',    help='vocal path');
 parser.add_argument('--hum_path',     type=str,   default='/content/database/hum_npy',    help='hum vocal path');
+
+parser.add_argument('--result_filename',     type=str,   default='/content/submit.csv',    help='result file name');
 
 args = parser.parse_args();
 
 def main():
   model = getattr(models, args.model)() 
   if args.parallel is True: 
-      model = torch.nn.DataParallel(model)
+    model = torch.nn.DataParallel(model)
   if args.parallel is True:
     model.module.load(args.load_model_path)
 
@@ -40,8 +42,44 @@ def main():
 
   model.eval()
 
-  for ii, (data, label) in enumerate(hum_dataloader): 
-    print(label)
+  vocals_features = {}
+  
+  for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
+    input = data.to(DEVICE)
+    score, feature = model(input)
+    feature = feature.data.cpu().numpy().reshape(-1)
+    song_id = label[0][0]
+    if song_id not in vocals_features:
+      vocals_features[song_id] = []    
+    vocals_features[song_id].append(feature)
+
+  hum_features = {}
+  
+  for ii, (data, label) in tqdm(enumerate(hum_dataloader)):
+    input = data.to(DEVICE)
+    score, feature = model(input)
+    feature = feature.data.cpu().numpy().reshape(-1)
+    hum_features[label[0]] = feature
+
+  result = []
+  hum_ids = list(hum_features.keys())
+  hum_ids.sort()
+  for hum_id in hum_ids:
+    topVocal = topTen(hum_features[hum_id], vocals_features)
+    
+    result.append([f"{hum_id}.mp3"] + list(map(lambda x: x[0] , topVocal)))
+  with open(args.result_filename, 'w') as f: 
+      write = csv.writer(f) 
+      write.writerows(result) 
+
+def topTen(hum_feat, vocals_features):
+    scores = []
+    for track_id in vocals_features.keys():
+        vocal_feat = vocals_features[track_id][0]
+        score = dot(hum_feat, vocal_feat)/(norm(hum_feat)*norm(vocal_feat))
+        scores.append([track_id, score])
+    scores.sort(reverse=True, key = lambda x: x[1])
+    return scores[:10]
 
 
 if __name__=='__main__':
