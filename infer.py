@@ -49,13 +49,13 @@ def main():
   result = []
   hum_ids = list(hum_features.keys())
   hum_ids.sort()
-  for hum_id in hum_ids:
+  for hum_id in tqdm(hum_ids):
     hum_len, hum_feat = hum_features[hum_id]
     vocals_data = CQTVocal(args.vocal_path, hum_len)
     vocal_dataloader = DataLoader(vocals_data, 1, shuffle=False,num_workers=1)
 
     vocals_features = {}
-    for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
+    for ii, (data, label) in enumerate(vocal_dataloader):
       input = data.to(DEVICE)
       score, feature = model(input)
       feature = feature.data.cpu().numpy().reshape(-1)
@@ -68,6 +68,7 @@ def main():
     topVocal = topTen(hum_feat, vocals_features)
     
     result.append([f"{hum_id}.mp3"] + list(map(lambda x: x[0] , topVocal)))
+
   with open(args.result_filename, 'w') as f: 
       write = csv.writer(f) 
       write.writerows(result) 
