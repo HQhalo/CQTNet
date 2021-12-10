@@ -1,48 +1,74 @@
-# Generate CQT from wavefile
-# Save as npy
-
-import librosa
-import numpy as np
+import glob
 import os
-from multiprocessing import Pool
 from tqdm import tqdm
+import subprocess
+import argparse
+from nnAudio import features
+from scipy.io import wavfile
+import torch
+import numpy as np
 
-in_dir = 'crawl_data/data/'
-out_dir = 'youtube_cqt_npy/'
+DEVICE= "cuda" if torch.cuda.is_available() else "cpu"
+SAMPLE_RATE = 16000
+cqt_extractor = features.CQT(sr=SAMPLE_RATE).to(DEVICE)
+
+parser = argparse.ArgumentParser(description = "gencqt");
+
+parser.add_argument('--vocal_path',     type=str,   default='/content/vocals',    help='vocal path');
+parser.add_argument('--out_vocals_path',     type=str,   default='/content/database/vocals',    help='out vocal path');
+
+parser.add_argument('--hum_path',     type=str,   default='/content/public_test/hum',    help='hum path');
+parser.add_argument('--out_hum_path',     type=str,   default='/content/database/hum',    help='out hum path');
+
+args = parser.parse_args();
 
 
-def CQT(args):
-    try:
-        in_path, out_path = args
-        data, sr = librosa.load(in_path)
-        if len(data)<1000:
-            return
-        cqt = np.abs(librosa.cqt(y=data, sr=sr))
-        mean_size = 20
-        height, length = cqt.shape
-        new_cqt = np.zeros((height,int(length/mean_size)),dtype=np.float64)
-        for i in range(int(length/mean_size)):
-            new_cqt[:,i] = cqt[:,i*mean_size:(i+1)*mean_size].mean(axis=1)
-        np.save(out_path, new_cqt)
-        #print(new_cens.shape)
-    except :
-        print('wa', in_path)
 
+def extractCqt(filename):
+    sr, song = wavfile.read(filename) # Loading your audio
+    assert sr == SAMPLE_RATE
+    x = torch.tensor(song, device=DEVICE).float() # casting the array into a PyTorch Tensor
+    spec = cqt_extractor(x)
+    spec = spec[0].cpu().detach().numpy() 
+
+    mean_size = 4
+
+    height, length = spec.shape
+    new_cqt = np.zeros((height,int(length/mean_size)),dtype=np.float64)
+    for i in range(int(length/mean_size)):
+        new_cqt[:,i] = spec[:,i*mean_size:(i+1)*mean_size].mean(axis=1)
+    return new_cqt
+
+
+def convert2wav(inputdir, outputdir, ext='.wav'):
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
+
+    files = glob.glob(f'{inputdir}/*{ext}')
+    files.sort()
+
+    for fname in tqdm(files):
+        name = fname.split('/')[-1].split('.')[0]
+        outfile = f"{outputdir}/{name}.wav"            
+        out = subprocess.call('ffmpeg -y -i %s -ac 1 -vn -acodec pcm_s16le -ar 16000 %s >/dev/null 2>/dev/null' %(fname,outfile), shell=True)
+        if out != 0:
+            raise ValueError('Conversion failed %s.'%fname)
+
+def getCqt(inputDir):
+    outdir = inputDir+"_npy"
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    for filename in tqdm(list(glob.glob(f"{inputDir}/*.wav"))):
+        new_cqt =  extractCqt(filename)
+        n = filename.split('/')[-1].split('.')[0]
+        with open(f'{outdir}/{n}.npy', 'wb') as f:
+            np.save(f, new_cqt)
+            
+if __name__=='__main__':
+    convert2wav(args.vocal_path, args.out_vocals_path)
+    convert2wav(args.hum_path, args.out_hum_path, ext='.mp3')
+
+    getCqt(args.out_vocals_path)
+    getCqt(args.out_hum_path)
         
-params =[]
-for ii, (root, dirs, files) in tqdm(enumerate(os.walk(in_dir))):  
-    if ii < 5000: continue
-    if len(files):
-        for file in files:
-            in_path = os.path.join(root,file)
-            set_id = root.split('/')[-1]
-            out_path = out_dir + set_id + '_' + file.split('.')[0] + '.npy'
-            params.append((in_path, out_path))
-
-print('begin')
-pool = Pool(40)
-pool.map(CQT, params)
-pool.close()
-pool.join()
-
 
