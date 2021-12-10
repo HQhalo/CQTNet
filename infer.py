@@ -22,7 +22,7 @@ parser.add_argument('--parallel',     type=bool,   default=True,    help='gpu');
 parser.add_argument('--vocal_path',     type=str,   default='/content/database/vocals_npy',    help='vocal path');
 parser.add_argument('--hum_path',     type=str,   default='/content/database/hum_npy',    help='hum vocal path');
 
-parser.add_argument('--hum_length',     type=int,   default=400,    help='hum length');
+parser.add_argument('--hum_length',     type=int,   default=300,    help='hum length');
 
 parser.add_argument('--result_filename',     type=str,   default='/content/submit.csv',    help='result file name');
 

@@ -63,7 +63,7 @@ class AngularPenaltySMLoss(nn.Module):
         return -torch.mean(L)
         
 class CQTNetAngular(BasicModule):
-    def __init__(self, num_classes=5000, loss_type='arcface'):
+    def __init__(self, num_classes=5000, loss_type='cosface'):
         super(CQTNetAngular, self).__init__()
         self.cqtnet = CQTNet()
 
@@ -77,7 +77,7 @@ class CQTNetAngular(BasicModule):
         return L
 
 class CQTTPPNetAngular(BasicModule):
-    def __init__(self, num_classes=5000, loss_type='arcface'):
+    def __init__(self, num_classes=5000, loss_type='cosface'):
         super(CQTTPPNetAngular, self).__init__()
         self.cqtnet = CQTTPPNet()
 
