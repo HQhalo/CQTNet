@@ -22,6 +22,8 @@ parser.add_argument('--parallel',     type=bool,   default=True,    help='gpu');
 parser.add_argument('--vocal_path',     type=str,   default='/content/database/vocals_npy',    help='vocal path');
 parser.add_argument('--hum_path',     type=str,   default='/content/database/hum_npy',    help='hum vocal path');
 
+parser.add_argument('--hum_length',     type=int,   default=400,    help='hum length');
+
 parser.add_argument('--result_filename',     type=str,   default='/content/submit.csv',    help='result file name');
 
 args = parser.parse_args();
@@ -46,10 +48,10 @@ def main():
     feature = feature.data.cpu().numpy().reshape(-1)
     hum_features[label[0]] = [ data.shape[3] ,feature]
 
-  vocals_data = CQTVocal(args.vocal_path, 400)
+  vocals_data = CQTVocal(args.vocal_path, args.hum_length)
   vocal_dataloader = DataLoader(vocals_data, 1, shuffle=False,num_workers=1)
   vocals_features = {}
-  
+
   for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
     input = data.to(DEVICE)
     score, feature = model(input)

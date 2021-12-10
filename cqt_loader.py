@@ -182,7 +182,7 @@ class CQTVocal(Dataset):
         self.file_list = list(os.listdir(filepath))
         self.hum_length = hum_length
         self.hum_pad = int(0.1 * hum_length)
-        self.stride = int(0.2 * hum_length)
+        self.stride = int(0.1 * hum_length)
 
         self.dataset = []
         for filename in self.file_list:
@@ -191,7 +191,7 @@ class CQTVocal(Dataset):
             vocal_feat = np.load(in_path) 
             vocal_indxs = list(range(vocal_feat.shape[1]))
             frame_idx = []
-            for search_len in [self.hum_length - self.hum_pad, self.hum_length, self.hum_length + self.hum_pad ]:
+            for search_len in [self.hum_length - self.hum_pad * 2, self.hum_length - self.hum_pad , self.hum_length, self.hum_length + self.hum_pad, self.hum_length + self.hum_pad*2 ]:
                 windows = list(mit.windowed(vocal_indxs, n=search_len, step=self.stride))
                 windows = [ [x for x in list(w) if x is not None] for w in windows]
                 frame_idx.extend(windows)
