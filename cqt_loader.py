@@ -182,7 +182,7 @@ class CQTVocal(Dataset):
         self.file_list = list(os.listdir(filepath))
         self.hum_length = hum_length
         self.hum_pad = int(0.1 * hum_length)
-        self.stride = int(0.1 * hum_length)
+        self.stride = int(0.2 * hum_length)
 
         self.dataset = []
         for filename in self.file_list:
