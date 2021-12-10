@@ -14,7 +14,7 @@ from numpy.linalg import norm
 
 parser = argparse.ArgumentParser(description = "infer");
 
-parser.add_argument('--model',         type=str,   default='mdx_extra',   help='Demucs model');
+parser.add_argument('--model',         type=str,   default='CQTNetAngular',   help='Demucs model');
 
 ## Data loader
 parser.add_argument('--load_model_path',     type=str,   default='/content/saved_models/last.pth',    help='model path');
@@ -29,7 +29,7 @@ def main():
   if args.parallel is True: 
       model = torch.nn.DataParallel(model)
   if args.parallel is True:
-    model.module.load(opt.load_model_path)
+    model.module.load(args.load_model_path)
 
   vocals_data = CQTVal(args.vocal_path, out_length=None)
   hum_data = CQTVal(args.vocal_path, out_length=None)
@@ -40,5 +40,9 @@ def main():
 
   model.eval()
 
-  for ii, (data, label) in enumerate(vocal_dataloader): 
+  for ii, (data, label) in enumerate(hum_dataloader): 
     print(label)
+
+
+if __name__=='__main__':
+  main()

@@ -20,6 +20,8 @@ parser.add_argument('--out_vocals_path',     type=str,   default='/content/datab
 parser.add_argument('--hum_path',     type=str,   default='/content/public_test/hum',    help='hum path');
 parser.add_argument('--out_hum_path',     type=str,   default='/content/database/hum',    help='out hum path');
 
+parser.add_argument('--mean_size',     type=int,   default=1,    help='mean_size');
+
 args = parser.parse_args();
 
 
@@ -31,12 +33,10 @@ def extractCqt(filename):
     spec = cqt_extractor(x)
     spec = spec[0].cpu().detach().numpy() 
 
-    mean_size = 4
-
     height, length = spec.shape
-    new_cqt = np.zeros((height,int(length/mean_size)),dtype=np.float64)
-    for i in range(int(length/mean_size)):
-        new_cqt[:,i] = spec[:,i*mean_size:(i+1)*mean_size].mean(axis=1)
+    new_cqt = np.zeros((height,int(length/args.mean_size)),dtype=np.float64)
+    for i in range(int(length/args.mean_size)):
+        new_cqt[:,i] = spec[:,i*args.mean_size:(i+1)*args.mean_size].mean(axis=1)
     return new_cqt
 
 
@@ -63,7 +63,7 @@ def getCqt(inputDir):
         n = filename.split('/')[-1].split('.')[0]
         with open(f'{outdir}/{n}.npy', 'wb') as f:
             np.save(f, new_cqt)
-            
+
 if __name__=='__main__':
     convert2wav(args.vocal_path, args.out_vocals_path)
     convert2wav(args.hum_path, args.out_hum_path, ext='.mp3')
