@@ -5,6 +5,9 @@ import numpy as np
 from torch.utils.data import Dataset
 import random
 import PIL
+import more_itertools as mit
+
+
 np.random.seed(42)
 def cut_data(data, out_length):
     if out_length is not None:
@@ -163,7 +166,58 @@ class CQTVal(Dataset):
         return data, [set_id, version_id]
     def __len__(self):
         return len(self.file_list)
-    
+
+# hum_len = len(hum_feat)
+#     hum_pad = 0.1*hum_len
+#     for track_id in vocals_features.keys():
+#         vocal_feat = vocals_features[track_id][0]
+#         for search_len in [hum_len - hum_pad, hum_len, hum_len + hum_pad ]:
+#           windows = list(mit.windowed(vocal_feat, n=search_len, step=hum_pad))
+#           windows = [list(filter(None, w)) for w in windows]
+
+
+class CQTVocal(Dataset):
+    def __init__(self, filepath , hum_length):
+        self.indir = filepath
+        self.file_list = list(os.listdir(filepath))
+        self.hum_length = hum_length
+        self.hum_pad = int(0.1 * hum_length)
+        self.stride = int(0.1 * hum_length)
+
+        self.dataset = []
+        for filename in self.file_list:
+            set_id, _ = filename.split('.')[0].split('-')
+            in_path = os.path.join(self.indir, filename)
+            vocal_feat = np.load(in_path) 
+            vocal_indxs = list(range(vocal_feat.shape[1]))
+            frame_idx = []
+            for search_len in [self.hum_length - self.hum_pad, self.hum_length, self.hum_length + self.hum_pad ]:
+                windows = list(mit.windowed(vocal_indxs, n=search_len, step=self.stride))
+                windows = [ [x for x in list(w) if x is not None] for w in windows]
+                frame_idx.extend(windows)
+            self.dataset.extend([[set_id, in_path , x] for x in frame_idx])
+            
+    def __getitem__(self, index):
+        transform_test = transforms.Compose([
+            lambda x : x.T,
+            # lambda x : x-np.mean(x),
+            lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
+            lambda x : cut_data_front(x, self.out_length),
+            lambda x : torch.Tensor(x),
+            lambda x : x.permute(1,0).unsqueeze(0),
+        ])
+        
+        set_id, in_path, frame_idx = self.dataset[index]
+
+        data = np.load(in_path) # from 12xN to Nx12
+        data = data.T[frame_idx].T
+
+        data = transform_test(data)
+
+        return data, [set_id, 0]
+    def __len__(self):
+        return len(self.dataset) 
+                
 class CQTHum(Dataset):
     def __init__(self, filepath , out_length=None):
         self.indir = filepath
