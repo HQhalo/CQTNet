@@ -42,7 +42,7 @@ def multi_train(**kwargs):
     print(model)
     # step2: data
    
-    train_data = CQT('/content/train_npy' ,out_length=400)
+    train_data = CQT('/content/train_npy' ,out_length=350)
     val_data = CQTVal('/content/val_npy', out_length=None)
    
     train_dataloader = DataLoader(train_data, opt.batch_size, shuffle=True,num_workers=opt.num_workers)
