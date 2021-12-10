@@ -164,6 +164,31 @@ class CQTVal(Dataset):
     def __len__(self):
         return len(self.file_list)
     
+class CQTHum(Dataset):
+    def __init__(self, filepath , out_length=None):
+        self.indir = filepath
+        self.file_list = list(os.listdir(filepath))
+        self.out_length = out_length
+    def __getitem__(self, index):
+        transform_test = transforms.Compose([
+            lambda x : x.T,
+            # lambda x : x-np.mean(x),
+            lambda x : x.astype(np.float32) / (np.max(np.abs(x))+ 1e-6),
+            lambda x : cut_data_front(x, self.out_length),
+            lambda x : torch.Tensor(x),
+            lambda x : x.permute(1,0).unsqueeze(0),
+        ])
+        
+        filename = self.file_list[index].strip()
+        hum_id = filename.split('.')[0]
+        in_path = os.path.join(self.indir, filename)
+        data = np.load(in_path) # from 12xN to Nx12
+
+        data = transform_test(data)
+        return data, hum_id
+    def __len__(self):
+        return len(self.file_list)
+
 def change_speed(data, l=0.7, r=1.5): # change data.shape[0]
     new_len = int(data.shape[0]*np.random.uniform(l,r))
     maxx = np.max(data)+1

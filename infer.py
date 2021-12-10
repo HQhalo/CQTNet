@@ -32,7 +32,7 @@ def main():
     model.module.load(args.load_model_path)
 
   vocals_data = CQTVal(args.vocal_path, out_length=None)
-  hum_data = CQTVal(args.vocal_path, out_length=None)
+  hum_data = CQTHum(args.hum_path, out_length=None)
 
   vocal_dataloader = DataLoader(vocals_data, 1, shuffle=False,num_workers=1)
   hum_dataloader = DataLoader(hum_data, 1, shuffle=False,num_workers=1)
