@@ -191,7 +191,7 @@ class CQTVocal(Dataset):
             vocal_feat = np.load(in_path) 
             vocal_indxs = list(range(vocal_feat.shape[1]))
             frame_idx = []
-            for search_len in [self.hum_length - self.hum_pad * 2, self.hum_length - self.hum_pad , self.hum_length, self.hum_length + self.hum_pad, self.hum_length + self.hum_pad*2 ]:
+            for search_len in [self.hum_length + self.hum_pad*x for x in list(range(-3, 4))]:
                 windows = list(mit.windowed(vocal_indxs, n=search_len, step=self.stride))
                 windows = [ [x for x in list(w) if x is not None] for w in windows]
                 frame_idx.extend(windows)
