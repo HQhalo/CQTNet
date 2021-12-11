@@ -13,11 +13,11 @@ class BasicModule(torch.nn.Module):
         self.model_name = str(type(self))
         self.sub_folder = time.strftime('%m%d_%H:%M:%S')
 
-    def load(self, path):
+    def load(self, path, map_location='cuda'):
         """
         可加载指定路径的模型
         """
-        self.load_state_dict(torch.load(path))
+        self.load_state_dict(torch.load(path, map_location=torch.device(map_location)))
 
     def save(self, epoch, songMrr, prefix):
         """

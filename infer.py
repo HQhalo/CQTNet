@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(description = "infer");
 parser.add_argument('--model',         type=str,   default='CQTNetAngular',   help='Demucs model');
 
 parser.add_argument('--load_model_path',     type=str,   default='/content/saved_models/last.pth',    help='model path');
-parser.add_argument('--parallel',     type=bool,   default=True,    help='gpu');
+
 
 parser.add_argument('--vocal_path',     type=str,   default='/content/database/vocals_npy',    help='vocal path');
 parser.add_argument('--hum_path',     type=str,   default='/content/database/hum_npy',    help='hum vocal path');
@@ -30,12 +30,14 @@ args = parser.parse_args();
 
 def main():
   model = getattr(models, args.model)() 
-  if args.parallel is True: 
+  if DEVICE == "cuda": 
     model = torch.nn.DataParallel(model)
-  if args.parallel is True:
     model.module.load(args.load_model_path)
+  else:
+    model.load(args.load_model_path, DEVICE)
 
-  
+  model.to(DEVICE)
+
   hum_data = CQTHum(args.hum_path, out_length=None)
   hum_dataloader = DataLoader(hum_data, 1, shuffle=False,num_workers=1)
 

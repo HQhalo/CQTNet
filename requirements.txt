@@ -1,3 +1,5 @@
 nnAudio
 fire
+tqdm
+more_itertools
 demucs
