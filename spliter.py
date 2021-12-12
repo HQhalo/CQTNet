@@ -85,7 +85,7 @@ if __name__=='__main__':
     if not infiles:
         print(f"No valid audio files in {args.in_path}")
 
-    for sub_infile in [infiles[i:i + 100] for i in range(0, len(infiles), 100)]:
+    for sub_infile in [infiles[i:i + 50] for i in range(0, len(infiles), 50)]:
         retry = 3
         while retry > 0:
             res = separate(sub_infile, args.out_separated_path, args.model)
