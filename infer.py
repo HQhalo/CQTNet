@@ -52,7 +52,7 @@ def main():
     hum_features[label[0]] = [ data.shape[3] ,feature]
     hum_lengths.append(data.shape[3])
   
-  hum_length = args.hum_length if args.hum_length is not None else int(np.median(hum_lengths))
+  hum_length = args.hum_length if args.hum_length is not None else int(np.mean(hum_lengths))
   print('Hum length: ', hum_length)
   
   vocals_data = CQTVocal(args.vocal_path, hum_length)
