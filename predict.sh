@@ -10,7 +10,7 @@ python gencqt.py --vocal_path /model/vocals \
   --out_hum_path /model/database/hum
 
 
-python infer.py --load_model_path /model/weight/41_0.96.pth \
+python infer.py --load_model_path /model/weight/83_0.982.pth \
   --vocal_path  /model/database/vocals_npy \
   --hum_path  /model/database/hum_npy \
   --result_filename /result/submission.csv
