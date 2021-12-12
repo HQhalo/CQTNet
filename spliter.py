@@ -57,13 +57,10 @@ def copy_process_streams(process: sp.Popen):
             std.write(buf)
             std.flush()
 
-def separate(inp, outp, model):
+def separate(files, outp, model):
     cmd = ["python3", "-m", "demucs.separate", "-o", str(outp), "-n", model, "--shifts", str(SHIFTS)]
     
-    files = [str(f) for f in find_files(inp)]
-    if not files:
-        print(f"No valid audio files in {inp}")
-        return
+    
     print("Going to separate the files:")
     print('\n'.join(files))
     print("With command: ", " ".join(cmd))
@@ -72,20 +69,32 @@ def separate(inp, outp, model):
     p.wait()
     if p.returncode != 0:
         print("Command failed, something went wrong.")
-
+        return False
+    return True
 
 if __name__=='__main__':
-  if not os.path.exists(args.out_separated_path):
-    print('Create out_separated_path folder')
-    os.makedirs(args.out_separated_path)
+    if not os.path.exists(args.out_separated_path):
+        print('Create out_separated_path folder')
+        os.makedirs(args.out_separated_path)
 
-  if not os.path.exists(args.out_vocal_path):
-    print('Create out_vocal_path folder')
-    os.makedirs(args.out_vocal_path)
+    if not os.path.exists(args.out_vocal_path):
+        print('Create out_vocal_path folder')
+        os.makedirs(args.out_vocal_path)
+    
+    infiles = [str(f) for f in find_files(args.in_path)]
+    if not infiles:
+        print(f"No valid audio files in {args.in_path}")
 
-  separate(args.in_path, args.out_separated_path, args.model)
-  
-  files = glob.glob(f'{args.out_separated_path}/mdx_extra/*/vocals.wav')
-  for fname in tqdm(files):
-    outfile = f"{args.out_vocal_path}/{fname.split('/')[-2]}-song_vocals.wav"
-    os.system(f"cp {fname} {outfile}")
+    for sub_infile in [infiles[i:i + 100] for i in range(0, len(infiles), 100)]:
+        retry = 3
+        while retry > 0:
+            res = separate(sub_infile, args.out_separated_path, args.model)
+            if res == False:
+                retry -= 1
+            else:
+                retry = 0
+
+    files = glob.glob(f'{args.out_separated_path}/mdx_extra/*/vocals.wav')
+    for fname in tqdm(files):
+        outfile = f"{args.out_vocal_path}/{fname.split('/')[-2]}-song_vocals.wav"
+        os.system(f"cp {fname} {outfile}")
