@@ -67,8 +67,6 @@ def main():
       if song_id not in vocals_features:
         vocals_features[song_id] = []    
       vocals_features[song_id].append(song_feat.reshape(-1))
-    break
-  # print(vocals_features)
 
 
   result = []
@@ -90,7 +88,7 @@ def topTen(hum_feat, vocals_features):
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
 
     for track_id in vocals_features.keys():
-        vocal_feats = vocals_features[track_id]
+        vocal_feats = np.array(vocals_features[track_id])
         in1 = torch.Tensor(vocal_feats).cuda()
         in2 = torch.Tensor(hum_feat).cuda()
         maxScore = torch.max(cos(in1, in2)).cpu().item()
