@@ -21,7 +21,7 @@ class BalancedBatchSampler(BatchSampler):
             l = len(item[2])
             if l not in self.frame_dataset:
                 self.frame_dataset[l] = []
-            self.frame_dataset.append(idx)
+            self.frame_dataset[l].append(idx)
         self.batch_dataset = []
         for key in self.frame_dataset.keys(): 
             self.batch_dataset.extend([self.frame_dataset[key][i:i + self.max_batch_size] for i in range(0, len(self.frame_dataset[key]),self.max_batch_size)])
