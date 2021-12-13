@@ -8,6 +8,8 @@ import sys
 from typing import Dict, Tuple, Optional, IO
 import glob
 from tqdm import tqdm
+import pickle 
+
 parser = argparse.ArgumentParser(description = "demucs");
 
 parser.add_argument('--model',         type=str,   default='mdx_extra',   help='Demucs model');
@@ -16,6 +18,7 @@ parser.add_argument('--model',         type=str,   default='mdx_extra',   help='
 parser.add_argument('--in_path',     type=str,   default='/content/public_test/full_song',    help='Input path');
 parser.add_argument('--out_separated_path',     type=str,   default='/content/train_separated',    help='Output path');
 parser.add_argument('--out_vocal_path',     type=str,   default='/content/vocals',    help='Output vocal path');
+parser.add_argument('--sub_file_path',     type=str,   default='/content/drive/MyDrive/colabdrive/humming/fake_hum/sub_infiles_1.pickle',    help='Output vocal path');
 
 
 args = parser.parse_args();
@@ -81,11 +84,10 @@ if __name__=='__main__':
         print('Create out_vocal_path folder')
         os.makedirs(args.out_vocal_path)
     
-    infiles = [str(f) for f in find_files(args.in_path)]
-    if not infiles:
-        print(f"No valid audio files in {args.in_path}")
-
-    for sub_infile in [infiles[i:i + 50] for i in range(0, len(infiles), 50)]:
+    with open(args.sub_file_path, 'rb') as handle:
+        sub_infiles = pickle.load(handle)
+    
+    for sub_infile in sub_infiles:
         retry = 3
         while retry > 0:
             res = separate(sub_infile, args.out_separated_path, args.model)
