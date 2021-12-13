@@ -86,7 +86,7 @@ if __name__=='__main__':
     
     with open(args.sub_file_path, 'rb') as handle:
         sub_infiles = pickle.load(handle)
-    
+    print('Number sub batch ', len(sub_infiles))
     for sub_infile in sub_infiles:
         retry = 3
         while retry > 0:
