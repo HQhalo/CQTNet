@@ -78,7 +78,7 @@ def song(file_list, chunks):
   print('Hum length: ', hum_length)
   
   vocals_data = CQTVocal(args.vocal_path, hum_length, file_list)
-  vocal_dataloader = DataLoader(vocals_data, batch_sampler=BalancedBatchSampler(vocals_data.dataset, 128), shuffle=False,num_workers=1, pin_memory=True)
+  vocal_dataloader = DataLoader(vocals_data, batch_sampler=BalancedBatchSampler(vocals_data.dataset, 100), shuffle=False,num_workers=1, pin_memory=False)
   vocals_features = {}
 
   for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
@@ -134,6 +134,6 @@ if __name__=='__main__':
     hum()
   else:
     file_list = list(os.listdir(args.vocal_path))
-    n = 6000
+    n = 2000
     for i, data in enumerate([file_list[i:i + n] for i in range(0, len(file_list), n)]):
       song(data, i)
