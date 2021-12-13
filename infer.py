@@ -84,13 +84,13 @@ def main():
 
 def topTen(hum_feat, vocals_features):
     scores = []
+    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+
     for track_id in vocals_features.keys():
         vocal_feats = vocals_features[track_id]
-        maxScore = -1
-        for vocal_feat in vocal_feats:
-          score = dot(hum_feat, vocal_feat)/(norm(hum_feat)*norm(vocal_feat))
-          if score > maxScore:
-            maxScore = score
+        in1 = torch.Tensor(vocal_feats).cuda()
+        in2 = torch.Tensor(hum_feat).cuda()
+        maxScore = torch.max(cos(in1, in2)).cpu().item()
         scores.append([track_id, maxScore])
     scores.sort(reverse=True, key = lambda x: x[1])
     return scores[:10]
