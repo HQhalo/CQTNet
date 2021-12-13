@@ -10,6 +10,7 @@ from utility import *
 from numpy import dot
 from numpy.linalg import norm
 import csv 
+import pickle
 
 DEVICE= "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser(description = "infer");
@@ -25,6 +26,7 @@ parser.add_argument('--hum_path',     type=str,   default='/content/database/hum
 parser.add_argument('--hum_length',     type=int,   default=None,    help='hum length');
 
 parser.add_argument('--result_filename',     type=str,   default='/content/submit.csv',    help='result file name');
+parser.add_argument('--run',     type=str,   default='song',    help='run');
 
 args = parser.parse_args();
 
@@ -43,33 +45,51 @@ def main():
 
   model.eval()
 
-  hum_features = {}  
-  hum_lengths = []
-  for ii, (data, label) in tqdm(enumerate(hum_dataloader)):
-    input = data.to(DEVICE)
-    score, feature = model(input)
-    feature = feature.data.cpu().numpy().reshape(-1)
-    hum_features[label[0]] = [ data.shape[3] ,feature]
-    hum_lengths.append(data.shape[3])
-  
-  hum_length = args.hum_length if args.hum_length is not None else int(np.mean(hum_lengths))
-  print('Hum length: ', hum_length)
-  
-  vocals_data = CQTVocal(args.vocal_path, hum_length)
-  vocal_dataloader = DataLoader(vocals_data, batch_sampler=BalancedBatchSampler(vocals_data.dataset, 128), shuffle=False,num_workers=1, pin_memory=True)
-  vocals_features = {}
+  if(args.run == 'hum'):
+    hum_features = {}  
+    hum_lengths = []
+    for ii, (data, label) in tqdm(enumerate(hum_dataloader)):
+      input = data.to(DEVICE)
+      score, feature = model(input)
+      feature = feature.data.cpu().numpy().reshape(-1)
+      hum_features[label[0]] = [ data.shape[3] ,feature]
+      hum_lengths.append(data.shape[3])
+    
+    with open('/content/hum_features.pkl', 'wb') as handle:
+      pickle.dump(hum_features, handle)
+      
+    with open('/content/hum_lengths.pkl', 'wb') as handle:
+      pickle.dump(hum_lengths, handle)
+      
+  else:
+    with open('/content/hum_lengths.pkl', 'rb') as handle:
+      hum_lengths = pickle.load(handle)
+    hum_length = args.hum_length if args.hum_length is not None else int(np.mean(hum_lengths))
+    print('Hum length: ', hum_length)
 
-  for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
-    input = data.to(DEVICE)
-    score, feature = model(input)
-    for idx, song_feat in enumerate(feature.data.cpu().numpy()):
-      song_id = label[0][idx]
-      if song_id not in vocals_features:
-        vocals_features[song_id] = []    
-      vocals_features[song_id].append(song_feat.reshape(-1))
+    vocals_data = CQTVocal(args.vocal_path, hum_length)
+    vocal_dataloader = DataLoader(vocals_data, batch_sampler=BalancedBatchSampler(vocals_data.dataset, 128), shuffle=False,num_workers=1, pin_memory=True)
+    vocals_features = {}
 
+    for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
+      input = data.to(DEVICE)
+      score, feature = model(input)
+      for idx, song_feat in enumerate(feature.data.cpu().numpy()):
+        song_id = label[0][idx]
+        if song_id not in vocals_features:
+          vocals_features[song_id] = []    
+        vocals_features[song_id].append(song_feat.reshape(-1))
+    
+    with open('/content/vocals_features.pkl', 'wb') as handle:
+      pickle.dump(vocals_features, handle)
 
+def runTopTen():
   result = []
+  with open('/content/hum_features.pkl', 'rb') as handle:
+      hum_features = pickle.load(handle)
+  with open('/content/vocals_features.pkl', 'rb') as handle:
+      vocals_features = pickle.load(handle)
+
   hum_ids = list(hum_features.keys())
   hum_ids.sort()
   for hum_id in tqdm(hum_ids):
@@ -98,4 +118,7 @@ def topTen(hum_feat, vocals_features):
 
 
 if __name__=='__main__':
-  main()
+  if  args.run == 'top':
+    runTopTen()
+  else:
+    main()
