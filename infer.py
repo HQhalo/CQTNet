@@ -62,11 +62,14 @@ def main():
   for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
     input = data.to(DEVICE)
     score, feature = model(input)
-    feature = feature.data.cpu().numpy().reshape(-1)
-    song_id = label[0][0]
-    if song_id not in vocals_features:
-      vocals_features[song_id] = []    
-    vocals_features[song_id].append(feature)
+    for idx, song_feat in enumerate(feature.data.cpu().numpy()):
+      song_id = label[0][idx]
+      if song_id not in vocals_features:
+        vocals_features[song_id] = []    
+      vocals_features[song_id].append(song_feat.reshape(-1))
+    break
+  # print(vocals_features)
+
 
   result = []
   hum_ids = list(hum_features.keys())
