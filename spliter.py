@@ -95,6 +95,9 @@ if __name__=='__main__':
                 retry -= 1
             else:
                 retry = 0
+        for filename in glob.glob(f'{args.out_separated_path}/mdx_extra/*/*.wav'):
+            if filename.split('/')[-1] != 'vocals.wav':
+                os.remove(filename)
 
     files = glob.glob(f'{args.out_separated_path}/mdx_extra/*/vocals.wav')
     for fname in tqdm(files):
