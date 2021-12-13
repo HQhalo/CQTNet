@@ -7,6 +7,32 @@ import random
 import PIL
 import more_itertools as mit
 
+from torch.utils.data.sampler import BatchSampler
+
+
+class BalancedBatchSampler(BatchSampler):
+
+    #[set_id, in_path , x]
+    def __init__(self, dataset, max_batch_size):
+        self.dataset = dataset
+        self.max_batch_size = max_batch_size
+        self.frame_dataset = {}
+        for idx, item in enumerate(self.dataset):
+            l = len(item[2])
+            if l not in self.frame_dataset:
+                self.frame_dataset[l] = []
+            self.frame_dataset.append(idx)
+        self.batch_dataset = []
+        for key in self.frame_dataset.keys(): 
+            self.batch_dataset.extend([self.frame_dataset[key][i:i + self.max_batch_size] for i in range(0, len(self.frame_dataset[key]),self.max_batch_size)])
+
+    def __iter__(self):
+        for batch in self.batch_dataset:
+            yield batch
+        
+    def __len__(self):
+        return len(self.batch_dataset)
+
 
 np.random.seed(42)
 def cut_data(data, out_length):

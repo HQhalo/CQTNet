@@ -56,7 +56,7 @@ def main():
   print('Hum length: ', hum_length)
   
   vocals_data = CQTVocal(args.vocal_path, hum_length)
-  vocal_dataloader = DataLoader(vocals_data, 1, shuffle=False,num_workers=1)
+  vocal_dataloader = DataLoader(vocals_data, batch_sampler=BalancedBatchSampler(vocals_data.dataset, 32), shuffle=False,num_workers=1, pin_memory=True)
   vocals_features = {}
 
   for ii, (data, label) in tqdm(enumerate(vocal_dataloader)):
