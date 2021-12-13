@@ -203,9 +203,9 @@ class CQTVal(Dataset):
 
 
 class CQTVocal(Dataset):
-    def __init__(self, filepath , hum_length):
+    def __init__(self, filepath , hum_length, file_list):
         self.indir = filepath
-        self.file_list = list(os.listdir(filepath))
+        self.file_list = file_list
         self.hum_length = hum_length
         self.hum_pad = int(0.05 * hum_length)
         self.stride = int(0.1 * hum_length)
