@@ -25,7 +25,7 @@ class BalancedBatchSampler(BatchSampler):
         self.batch_dataset = []
         for key in self.frame_dataset.keys(): 
             self.batch_dataset.extend([self.frame_dataset[key][i:i + self.max_batch_size] for i in range(0, len(self.frame_dataset[key]),self.max_batch_size)])
-
+        print('Number Batch ' , len(self.batch_dataset))
     def __iter__(self):
         for batch in self.batch_dataset:
             yield batch
