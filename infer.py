@@ -11,6 +11,7 @@ from numpy import dot
 from numpy.linalg import norm
 import csv 
 import pickle
+import glob
 
 DEVICE= "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser(description = "infer");
@@ -97,9 +98,14 @@ def runTopTen():
   result = []
   with open('/content/hum_features.pkl', 'rb') as handle:
       hum_features = pickle.load(handle)
-  with open('/content/vocals_features.pkl', 'rb') as handle:
-      vocals_features = pickle.load(handle)
-
+  vocals_features = {}
+  for filename in glob.glob('/content/vocals_features_*.pkl'):
+    with open(filename, 'rb') as handle:
+      tmp = pickle.load(handle)
+      for key in list(tmp.keys()):
+        vocals_features[key] = tmp[key]
+  tmp = ''
+  
   hum_ids = list(hum_features.keys())
   hum_ids.sort()
   for hum_id in tqdm(hum_ids):
